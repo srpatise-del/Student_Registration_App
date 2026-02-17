@@ -1,4 +1,4 @@
-name: flutter_student_registration_app
+name: flutter_product_image
 description: "A new Flutter project."
 publish_to: 'none'
 version: 0.1.0
@@ -10,6 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  http: ^1.2.0
+  image_picker: ^1.0.7 
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -17,3 +20,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/
