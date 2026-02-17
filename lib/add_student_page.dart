@@ -5,15 +5,16 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 
-class AddProductPage extends StatefulWidget {
-  const AddProductPage({super.key});
+const String baseUrl = "http://127.0.0.1/student_registration_app/php_api/";
+
+class AddStudentPage extends StatefulWidget {
+  const AddStudentPage({super.key});
 
   @override
-  State<AddProductPage> createState() => _AddProductPageState();
+  State<AddStudentPage> createState() => _AddStudentPageState();
 }
 
-class _AddProductPageState extends State<AddProductPage> {
-
+class _AddStudentPageState extends State<AddStudentPage> {
   ////////////////////////////////////////////////////////////
   // ✅ Controllers
   ////////////////////////////////////////////////////////////
@@ -31,9 +32,7 @@ class _AddProductPageState extends State<AddProductPage> {
   Future<void> pickImage() async {
     final picker = ImagePicker();
 
-    final pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
-    );
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       setState(() {
@@ -47,17 +46,35 @@ class _AddProductPageState extends State<AddProductPage> {
   ////////////////////////////////////////////////////////////
 
   Future<void> saveProduct() async {
-
     if (selectedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("กรุณาเลือกรูปภาพ")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("กรุณาเลือกรูปภาพ")));
       return;
     }
 
-    final url = Uri.parse(
-      "http://localhost/flutter_student_registration_app/php_api/insert_student.php",
-    );
+    if (nameController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("กรุณากรอกชื่อนักศึกษา")));
+      return;
+    }
+
+    if (emailController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("กรุณากรอกอีเมล")));
+      return;
+    }
+
+    if (phoneController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("กรุณากรอกเบอร์โทร")));
+      return;
+    }
+
+    final url = Uri.parse("${baseUrl}insert_student.php");
 
     var request = http.MultipartRequest('POST', url);
 
@@ -68,14 +85,12 @@ class _AddProductPageState extends State<AddProductPage> {
     request.fields['name'] = nameController.text;
     request.fields['email'] = emailController.text;
     request.fields['phone'] = phoneController.text;
-    
 
     ////////////////////////////////////////////////////////////
     // ✅ Upload Image (แยก Web / Mobile)
     ////////////////////////////////////////////////////////////
 
     if (kIsWeb) {
-
       final bytes = await selectedImage!.readAsBytes();
 
       request.files.add(
@@ -85,14 +100,9 @@ class _AddProductPageState extends State<AddProductPage> {
           filename: selectedImage!.name,
         ),
       );
-
     } else {
-
       request.files.add(
-        await http.MultipartFile.fromPath(
-          'image',
-          selectedImage!.path,
-        ),
+        await http.MultipartFile.fromPath('image', selectedImage!.path),
       );
     }
 
@@ -100,24 +110,37 @@ class _AddProductPageState extends State<AddProductPage> {
     // ✅ Execute
     ////////////////////////////////////////////////////////////
 
-    var response = await request.send();
-    var responseData = await response.stream.bytesToString();
+    try {
+      var response = await request.send();
+      var responseData = await response.stream.bytesToString();
 
-    final data = json.decode(responseData);
+      debugPrint("Response: $responseData");
 
-    if (data["success"] == true) {
+      final data = json.decode(responseData);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("เพิ่มนักศึกษาเรียบร้อย")),
-      );
+      if (data["success"] == true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("เพิ่มนักศึกษาเรียบร้อย")),
+          );
 
-      Navigator.pop(context, true);
-
-    } else {
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: ${data["error"]}")),
-      );
+          Navigator.pop(context, true);
+        }
+      } else {
+        String errorMsg = data["error"] ?? "Unknown error";
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Error: $errorMsg")));
+        }
+      }
+    } catch (e) {
+      debugPrint("Exception: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      }
     }
   }
 
@@ -136,32 +159,26 @@ class _AddProductPageState extends State<AddProductPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-
               ////////////////////////////////////////////////////////////
               // 🖼 Image Preview (สำคัญมาก)
               ////////////////////////////////////////////////////////////
-
               GestureDetector(
                 onTap: pickImage,
                 child: Container(
                   height: 150,
                   width: double.infinity,
-                  decoration: BoxDecoration(
-                    border: Border.all(),
-                  ),
+                  decoration: BoxDecoration(border: Border.all()),
                   child: selectedImage == null
-                      ? const Center(
-                          child: Text("แตะเพื่อเลือกรูป"),
-                        )
+                      ? const Center(child: Text("แตะเพื่อเลือกรูป"))
                       : kIsWeb
-                          ? Image.network(
-                              selectedImage!.path, // ✅ Web
-                              fit: BoxFit.cover,
-                            )
-                          : Image.file(
-                              File(selectedImage!.path), // ✅ Mobile
-                              fit: BoxFit.cover,
-                            ),
+                      ? Image.network(
+                          selectedImage!.path, // ✅ Web
+                          fit: BoxFit.cover,
+                        )
+                      : Image.file(
+                          File(selectedImage!.path), // ✅ Mobile
+                          fit: BoxFit.cover,
+                        ),
                 ),
               ),
 
@@ -170,7 +187,6 @@ class _AddProductPageState extends State<AddProductPage> {
               ////////////////////////////////////////////////////////////
               // 🏷 Name
               ////////////////////////////////////////////////////////////
-
               TextField(
                 controller: nameController,
                 decoration: const InputDecoration(
@@ -184,7 +200,6 @@ class _AddProductPageState extends State<AddProductPage> {
               ////////////////////////////////////////////////////////////
               // 💰 email
               ////////////////////////////////////////////////////////////
-
               TextField(
                 controller: emailController,
                 keyboardType: TextInputType.number,
@@ -199,7 +214,6 @@ class _AddProductPageState extends State<AddProductPage> {
               ////////////////////////////////////////////////////////////
               // 📝 phone
               ////////////////////////////////////////////////////////////
-
               TextField(
                 controller: phoneController,
                 maxLines: 3,
@@ -214,7 +228,6 @@ class _AddProductPageState extends State<AddProductPage> {
               ////////////////////////////////////////////////////////////
               // ✅ Button
               ////////////////////////////////////////////////////////////
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

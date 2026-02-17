@@ -10,7 +10,7 @@ void main() => runApp(const MyApp());
 //////////////////////////////////////////////////////////////
 
 const String baseUrl =
-    "http://127.0.0.1/flutterstudent_registration_app/php_api/";
+    "http://127.0.0.1/student_registration_app/php_api/";
 
 //////////////////////////////////////////////////////////////
 // ✅ APP ROOT
@@ -22,48 +22,46 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: ProductList(),
+      home: StudentList(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
 //////////////////////////////////////////////////////////////
-// ✅ PRODUCT LIST PAGE
+// ✅ Student LIST PAGE
 //////////////////////////////////////////////////////////////
 
-class ProductList extends StatefulWidget {
-  const ProductList({super.key});
+class StudentList extends StatefulWidget {
+  const StudentList({super.key});
 
   @override
-  State<ProductList> createState() => _ProductListState();
+  State<StudentList> createState() => _StudentListState();
 }
 
-class _ProductListState extends State<ProductList> {
-  List products = [];
-  List filteredProducts = [];
+class _StudentListState extends State<StudentList> {
+  List Students = [];
+  List filteredStudents = [];
   final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    fetchProducts();
+    fetchStudents();
   }
 
   ////////////////////////////////////////////////////////////
   // ✅ FETCH DATA
   ////////////////////////////////////////////////////////////
 
-  Future<void> fetchProducts() async {
+  Future<void> fetchStudents() async {
     try {
-      final response = await http.get(
-        Uri.parse("${baseUrl}show_data.php"),
-      );
+      final response = await http.get(Uri.parse("${baseUrl}show_data.php"));
 
       if (response.statusCode == 200) {
         setState(() {
-          products = json.decode(response.body);
-          filteredProducts = products;
+          Students = json.decode(response.body);
+          filteredStudents = Students;
         });
       }
     } catch (e) {
@@ -75,10 +73,10 @@ class _ProductListState extends State<ProductList> {
   // ✅ SEARCH
   ////////////////////////////////////////////////////////////
 
-  void filterProducts(String query) {
+  void filterStudents(String query) {
     setState(() {
-      filteredProducts = products.where((product) {
-        final name = product['name']?.toLowerCase() ?? '';
+      filteredStudents = Students.where((Student) {
+        final name = Student['name']?.toLowerCase() ?? '';
         return name.contains(query.toLowerCase());
       }).toList();
     });
@@ -91,53 +89,47 @@ class _ProductListState extends State<ProductList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Product List')),
+      appBar: AppBar(title: const Text('Student List')),
 
       body: Column(
         children: [
-
           //////////////////////////////////////////////////////
           // 🔍 SEARCH BOX
           //////////////////////////////////////////////////////
-
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: searchController,
               decoration: const InputDecoration(
-                labelText: 'Search by product name',
+                labelText: 'Search by Student name',
                 prefixIcon: Icon(Icons.search),
               ),
-              onChanged: filterProducts,
+              onChanged: filterStudents,
             ),
           ),
 
           //////////////////////////////////////////////////////
-          // 📦 PRODUCT LIST
+          // 📦 Student LIST
           //////////////////////////////////////////////////////
-
           Expanded(
-            child: filteredProducts.isEmpty
+            child: filteredStudents.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : ListView.builder(
-                    itemCount: filteredProducts.length,
+                    itemCount: filteredStudents.length,
                     itemBuilder: (context, index) {
-                      final product = filteredProducts[index];
+                      final Student = filteredStudents[index];
 
                       //////////////////////////////////////////////////////
                       // ✅ IMAGE URL (สำคัญมาก)
                       //////////////////////////////////////////////////////
 
-                     String imageUrl =
-                         "${baseUrl}images/${product['image']}";
-    
+                      String imageUrl = "${baseUrl}images/${Student['image']}";
+
                       return Card(
                         child: ListTile(
-
                           //////////////////////////////////////////////////
                           // 🖼 IMAGE FROM SERVER
                           //////////////////////////////////////////////////
-
                           leading: SizedBox(
                             width: 80,
                             height: 80,
@@ -152,35 +144,26 @@ class _ProductListState extends State<ProductList> {
                           //////////////////////////////////////////////////
                           // 🏷 NAME
                           //////////////////////////////////////////////////
-
-                          title: Text(product['name'] ?? 'No Name'),
-
-                          //////////////////////////////////////////////////
-                          // 📝 DESCRIPTION
-                          //////////////////////////////////////////////////
-
-                          subtitle: Text(
-                            product['description'] ?? 'No Description',
-                          ),
+                          title: Text(Student['name'] ?? 'No Name'),
 
                           //////////////////////////////////////////////////
-                          // 💰 PRICE
+                          // 📝 phone
                           //////////////////////////////////////////////////
+                          subtitle: Text(Student['phone'] ?? 'No phone'),
 
-                          trailing: Text(
-                            '฿${product['price'] ?? '0.00'}',
-                          ),
+                          //////////////////////////////////////////////////
+                          // 💰 email
+                          //////////////////////////////////////////////////
+                          trailing: Text('฿${Student['email'] ?? '0.00'}'),
 
                           //////////////////////////////////////////////////
                           // 👉 DETAIL PAGE
                           //////////////////////////////////////////////////
-
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    ProductDetail(product: product),
+                                builder: (_) => StudentDetail(Student: Student),
                               ),
                             );
                           },
@@ -195,18 +178,15 @@ class _ProductListState extends State<ProductList> {
       ////////////////////////////////////////////////////////
       // ✅ ADD BUTTON
       ////////////////////////////////////////////////////////
-
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
 
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => const AddProductPage(),
-            ),
+            MaterialPageRoute(builder: (_) => const AddStudentPage()),
           ).then((value) {
-            fetchProducts(); // ✅ รีโหลดหลังเพิ่มสินค้า
+            fetchStudents(); // ✅ รีโหลดหลังเพิ่มสินค้า
           });
         },
       ),
@@ -215,28 +195,24 @@ class _ProductListState extends State<ProductList> {
 }
 
 //////////////////////////////////////////////////////////////
-// ✅ PRODUCT DETAIL PAGE
+// ✅ Student DETAIL PAGE
 //////////////////////////////////////////////////////////////
 
-class ProductDetail extends StatelessWidget {
-  final dynamic product;
+class StudentDetail extends StatelessWidget {
+  final dynamic Student;
 
-  const ProductDetail({super.key, required this.product});
+  const StudentDetail({super.key, required this.Student});
 
   @override
   Widget build(BuildContext context) {
-
     ////////////////////////////////////////////////////////////
     // ✅ IMAGE URL
     ////////////////////////////////////////////////////////////
 
-    String imageUrl =
-        "${baseUrl}images/${product['image']}";
+    String imageUrl = "${baseUrl}images/${Student['image']}";
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(product['name'] ?? 'Detail'),
-      ),
+      appBar: AppBar(title: Text(Student['name'] ?? 'Detail')),
 
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -244,11 +220,9 @@ class ProductDetail extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             //////////////////////////////////////////////////////
             // 🖼 IMAGE
             //////////////////////////////////////////////////////
-
             Center(
               child: Image.network(
                 imageUrl,
@@ -264,31 +238,25 @@ class ProductDetail extends StatelessWidget {
             //////////////////////////////////////////////////////
             // 🏷 NAME
             //////////////////////////////////////////////////////
-
             Text(
-              product['name'] ?? '',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              Student['name'] ?? '',
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 10),
 
             //////////////////////////////////////////////////////
-            // 📝 DESCRIPTION
+            // 📝 phone
             //////////////////////////////////////////////////////
-
-            Text(product['description'] ?? ''),
+            Text(Student['phone'] ?? ''),
 
             const SizedBox(height: 10),
 
             //////////////////////////////////////////////////////
-            // 💰 PRICE
+            // 💰 email
             //////////////////////////////////////////////////////
-
             Text(
-              'ราคา: ฿${product['price']}',
+              'ราคา: ฿${Student['email'] ?? '0.00'}',
               style: const TextStyle(fontSize: 18),
             ),
           ],
